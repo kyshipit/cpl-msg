@@ -1,0 +1,29 @@
+**/bin/
+**/build/
+
+# 编译产物
+**/*.out.*
+*.o
+*.obj
+*.exe
+*.out
+.build/
+dist/
+main
+
+# Python
+__pycache__/
+*.pyc
+*.pyo
+.venv/
+venv/
+.pytest_cache/
+
+# IDE
+.vscode/
+.idea/
+*.swp
+.DS_Store
+
+# 日志
+*.log
