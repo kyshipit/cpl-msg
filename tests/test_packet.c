@@ -25,7 +25,7 @@ int main(void)
         return -1;
     }
 
-    // 【学习点】C99指定初始化
+    // C99指定初始化
     *pkt = (MsgHeader){
         .ver = 1,
         .encrypt = 0,

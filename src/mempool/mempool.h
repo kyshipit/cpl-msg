@@ -1,8 +1,8 @@
 /**
  * @file mempool.h
  * @brief MiniMsg-C 固定块内存池
- * @learning 【学习点】静态全局变量、单链表管理空闲块、内存复用、防double free、内存统计
- * 【学习点】相比直接malloc：减少系统调用开销、便于内存泄漏统计、适合协议小包场景
+ * @learning 静态全局变量、单链表管理空闲块、内存复用、防double free、内存统计
+ * 相比直接malloc：减少系统调用开销、便于内存泄漏统计、适合协议小包场景
  * 【注意UB】禁止free内存池返回的指针；只能调用mempool_free；越界写会破坏链表指针
  */
 #ifndef MEMPOOL_H
@@ -22,7 +22,7 @@ extern "C" {
 
 /**
  * @brief 内存块头部控制信息
- * 【学习点】块头埋在内存前面，用来标记是否已分配、链表指针
+ * 块头埋在内存前面，用来标记是否已分配、链表指针
  */
 typedef struct MemBlockHeader {
     bool used;                  // true=已分配，false=空闲

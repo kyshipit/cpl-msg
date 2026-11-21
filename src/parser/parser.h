@@ -1,7 +1,7 @@
 /**
  * @file parser.h
  * @brief MiniMsg-C 协议解析器：流式状态机，处理TCP粘包、分包，函数指针回调分发
- * @learning 【学习点】状态机、环形/流式缓冲区、TCP粘包处理、函数指针回调、事件驱动
+ * @learning 状态机、环形/流式缓冲区、TCP粘包处理、函数指针回调、事件驱动
  * @note TCP是流式无边界，不能保证一次recv拿到一个完整包；状态机是标准解决方案
  * 【注意UB】回调内部禁止长时间阻塞；缓冲区越界会破坏状态；回调中不要递归调用parser输入
  */
@@ -42,7 +42,7 @@ typedef void (*ParserPktCallback)(struct Parser *parser, const struct MsgHeader 
 
 /**
  * Parser 实例结构体：保存状态、缓冲区、当前包信息、回调
- * 【学习点】面向对象C风格：结构体+函数指针，一个parser对应一条连接
+ * 面向对象C风格：结构体+函数指针，一个parser对应一条连接
  */
 typedef struct Parser {
     ParserState state;

@@ -21,7 +21,7 @@ int main(void)
     const char *msg = "hello minimsg";
     double pi = 3.1415926;
 
-    // 【学习点】LOG_VAR 使用 _Generic 自动识别类型
+    // LOG_VAR 使用 _Generic 自动识别类型
     LOG_VAR(seq, seq);
     LOG_VAR(body_len, body_len);
     LOG_VAR(msg, msg);

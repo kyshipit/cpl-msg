@@ -184,7 +184,7 @@ static void conn_mgr_scan_timeout(struct ConnMgr *mgr, uint64_t now)
             i++;
         }
     }
-    // 新增：session过期清理，30分钟无活动
+    // session过期清理，30分钟无活动
     session_scan_expire(mgr->sess_mgr, now, 30 * 60 * 1000ULL);
 }
 

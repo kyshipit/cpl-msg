@@ -1,8 +1,8 @@
 /**
  * @file log.h
- * @brief MiniMsg-C 日志模块：可变参数宏、C11 _Generic泛型打印、DEBUG条件编译
- * @learning 【学习点】可变参数宏 __VA_ARGS__、#字符串化、##拼接、C11 _Generic
- * 【学习点坑】_Generic 表达式不能直接和字符串字面量在预处理阶段拼接，新手高频报错
+ * @brief 日志模块：可变参数宏、C11 _Generic泛型打印、DEBUG条件编译
+ * @learning 可变参数宏 __VA_ARGS__、#字符串化、##拼接、C11 _Generic
+ * _Generic 表达式不能直接和字符串字面量在预处理阶段拼接，新手高频报错
  */
 #ifndef LOG_H
 #define LOG_H
@@ -27,7 +27,7 @@ void log_write(LogLevel level, const char *file, int line, const char *fmt, ...)
 
 /**
  * @brief LOG_VAR：自动识别变量类型打印变量名+值
- * 【学习点】C11 _Generic 编译期类型分支
+ * C11 _Generic 编译期类型分支
  * 用法：LOG_VAR(seq, seq);
  */
 #define LOG_VAR(name, val)                                                              \

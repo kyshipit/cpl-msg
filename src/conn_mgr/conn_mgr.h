@@ -1,7 +1,7 @@
 /**
  * @file conn_mgr.h
  * @brief MiniMsg-C 连接管理器 + epoll事件循环
- * @learning 【学习点】epoll IO多路复用、监听fd管理、连接集合、定时心跳扫描、事件驱动主循环
+ * @learning epoll IO多路复用、监听fd管理、连接集合、定时心跳扫描、事件驱动主循环
  * @note 统一管理listen fd、所有TcpConn；负责accept、事件分发、超时清理
  * 【注意UB】不要在handler/回调里做阻塞操作；单线程epoll模型
  */

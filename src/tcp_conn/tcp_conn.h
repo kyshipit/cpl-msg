@@ -1,7 +1,7 @@
 /**
  * @file tcp_conn.h
  * @brief MiniMsg-C TCP连接层：封装fd、parser、收发缓冲区、心跳超时、连接上下文
- * @learning 【学习点】C面向对象封装、IO多路复用配套连接对象、生命周期管理、心跳超时
+ * @learning C面向对象封装、IO多路复用配套连接对象、生命周期管理、心跳超时
  * @note 一条TCP连接对应一个TcpConn实例；和parser、cmd_dispatch联动
  * 【注意UB】禁止外部直接close fd；必须调用tcp_conn_destroy；多线程下外部要加锁保护conn
  */

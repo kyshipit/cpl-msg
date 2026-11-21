@@ -25,7 +25,7 @@ void log_write(LogLevel level, const char *file, int line, const char *fmt, ...)
         return;
     }
 
-    // 【学习点】va_list 可变参数处理，C标准可变参数
+    // va_list 可变参数处理，C标准可变参数
     va_list ap;
     va_start(ap, fmt);
 

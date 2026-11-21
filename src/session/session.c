@@ -19,7 +19,7 @@ static uint64_t get_ms(void)
     return (uint64_t)ts.tv_sec * 1000 + (uint64_t)ts.tv_nsec / 1000000;
 }
 
-// 简单生成sid：用时间+随机数，教学够用
+// 简单生成sid：用时间+随机数
 static void gen_sid(char *buf, uint32_t len)
 {
     uint64_t t = get_ms();

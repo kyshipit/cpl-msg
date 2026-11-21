@@ -2,7 +2,7 @@
  * @file packet.h
  * @brief MiniMsg-C 自定义二进制协议包头定义、序列化辅助函数
  * @note C11 特性：static_assert、柔性数组、位域
- * @learning 【学习点】位域、柔性数组、编译期对齐校验、网络字节序、结构体packed
+ * @learning 位域、柔性数组、编译期对齐校验、网络字节序、结构体packed
  */
 #ifndef PACKET_H
 #define PACKET_H
@@ -24,10 +24,10 @@ typedef enum {
 // ===================== 协议包头 =====================
 /**
  * MsgHeader：固定包头 + 变长包体柔性数组
- * 【学习点1】位域：用bit打包标志位，节省带宽，协议/寄存器开发高频写法
- * 【学习点2】柔性数组 data[]：只能放在结构体最后；不计入结构体sizeof大小
- * 【学习点3】static_assert：C11编译期断言，校验包头固定长度
- * 【学习点4】__attribute__((packed)) GCC扩展：取消结构体自动对齐填充，保证协议二进制布局稳定
+ * 【1】位域：用bit打包标志位，节省带宽，协议/寄存器开发高频写法
+ * 【2】柔性数组 data[]：只能放在结构体最后；不计入结构体sizeof大小
+ * 【3】static_assert：C11编译期断言，校验包头固定长度
+ * 【4】__attribute__((packed)) GCC扩展：取消结构体自动对齐填充，保证协议二进制布局稳定
  * 【注意UB】柔性数组不能直接结构体拷贝，只能拷贝包头+后续data内存；不能栈上开大柔性数组
  * 【扩展点】后续TFLite MNIST包可以新增 CMD_AI_MNIST，复用这套包头结构
  */
@@ -54,7 +54,7 @@ static_assert(sizeof(MsgHeader) == 8, "MsgHeader must be exactly 8 bytes!");
  */
 static inline uint32_t packet_total_size(uint32_t body_len)
 {
-    // 【学习点】inline C99内联函数，适合短小工具函数，减少函数调用开销
+    // inline C99内联函数，适合短小工具函数，减少函数调用开销
     return sizeof(MsgHeader) + body_len;
 }
 

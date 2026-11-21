@@ -1,7 +1,7 @@
 /**
  * @file cmd_dispatch.h
  * @brief MiniMsg-C 命令分发层：cmd -> 业务处理函数表，路由分发
- * @learning 【学习点】函数指针数组、命令注册表、查表分发、解耦协议解析与业务
+ * @learning 函数指针数组、命令注册表、查表分发、解耦协议解析与业务
  * @note parser回调里调用dispatch，根据hdr->cmd找到对应handler执行
  * 【注意UB】handler内部不要阻塞；业务包体指针有效期仅限本次回调内，不要长期持有
  */
@@ -16,12 +16,6 @@ extern "C" {
 #endif
 
 // 循环依赖，只标签前置
-//❌禁止typedef struct
-/*
-struct MsgHeader MsgHeader;
-struct ServiceCtx ServiceCtx;
-struct TcpConn TcpConn;  */
-
 struct MsgHeader;
 struct ServiceCtx;
 struct TcpConn;
@@ -30,7 +24,7 @@ struct SessionMgr;
 
 /**
  * @brief HandlerCtx：传给handler的上下文
- * 教学：代替只传TcpConn*，handler同时拿到根服务上下文 + 当前连接
+ * 代替只传TcpConn*，handler同时拿到根服务上下文 + 当前连接
  */
 typedef struct HandlerCtx{
     struct ServiceCtx *svc_ctx;
@@ -65,7 +59,7 @@ typedef struct CmdEntry{
 bool cmd_dispatch(const struct MsgHeader *hdr, const uint8_t *body, void *user_data);
 
 /**
- * @brief 注册命令处理函数（静态表方案，也可以改成动态注册，这里用静态表更适合教学）
+ * @brief 注册命令处理函数
  * 静态表在.c里维护，新增命令只需要在表追加一行
  */
 void cmd_dispatch_register_table(void);

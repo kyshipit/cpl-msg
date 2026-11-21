@@ -11,7 +11,7 @@ void packet_hton(MsgHeader *hdr)
     {
         return;
     }
-    // 【学习点】网络通信标准：网络一律大端；主机序转网络序
+    // 网络通信标准：网络一律大端；主机序转网络序
     hdr->seq      = htons(hdr->seq);
     hdr->body_len = htonl(hdr->body_len);
 }

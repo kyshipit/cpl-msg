@@ -7,7 +7,7 @@
 #include <string.h>
 #include <stddef.h>   //offsetof头文件
 
-// 【学习点】static全局变量：仅本文件可见，封装内存池数据，外部无法直接访问
+// static全局变量：仅本文件可见，封装内存池数据，外部无法直接访问
 // 每个块空间 = 块头 + 用户可用空间
 typedef struct {
     MemBlockHeader hdr;
@@ -65,7 +65,7 @@ void mempool_free(void *ptr)
         LOG_WARN("mempool_free skip null ptr");
         return;
     }
-    // 【学习点】指针回退拿到块头：用户data指针往前偏移得到MemBlock起始地址
+    // 指针回退拿到块头：用户data指针往前偏移得到MemBlock起始地址
     MemBlock *b = (MemBlock *)((uint8_t *)ptr - offsetof(MemBlock, data));
     MemBlockHeader *hdr = &b->hdr;
 

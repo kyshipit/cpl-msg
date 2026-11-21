@@ -1,10 +1,51 @@
-# MiniMsg-C
-> 基于 C11 的自定义二进制协议网关 + 规则AI聊天机器人
-> 项目目标：**一站式吃透C语言进阶难点**，面向学习、教学、简历演示；可渐进扩展 TinyML 推理、向量检索。
-> 编译标准：C11 | 编译器：gcc | 推荐环境：WSL / Ubuntu Linux
+# CPL-MSG
+> 基于 C11 的自定义二进制协议网关 + 规则AI聊天机器人，可渐进扩展 TinyML 推理、向量检索。
 
-## ✅ 覆盖的C语言进阶重难点清单
-> 每个知识点在代码中带有标记 `【学习点】`
+## 📂 目录说明
+
+```
+minimsg-c/
+├── README.md               # 项目说明、清单、编译、运行、扩展路线
+├── Makefile                # 编译脚本，支持debug/release，分阶段编译
+├── src/
+│   ├── packet/    协议头定义、序列化/反序列化工具
+│   ├── parser/    状态机粘包解析 + 命令分发（函数指针回调表）
+│   ├── mempool/   自研固定块内存池，所有数据包从这里分配
+│   ├── log/       日志：可变参数宏 + _Generic泛型打印
+│   ├── ai/        规则AI：词典、最大正向分词、编辑距离模糊匹配、意图识别
+│   ├── session/   对话上下文链表，保存历史对话
+│   ├── net/       TCP服务端（select单线程Reactor，可开关）
+│   └── main.c     入口，支持两种运行模式
+├── tests/         分模块单元测试，单独编译调试单个模块
+└── docs/          自查清单
+```
+
+> 设计理由：
+>
+> 1. 按**分层**而不是按功能堆文件：协议→解析→内存→日志→AI→网络
+> 2. tests 独立：每个模块单独可跑，新手可以单独跑 `test_parser` 不用碰网络
+
+
+## 🚀 编译 & 运行
+
+
+
+## 📖 顺序
+
+1. 阅读 `src/packet/packet.h`：位域、柔性数组、static_assert 对齐校验
+2. 跑 `test_parser`：状态机、粘包解析、函数指针分发（核心难点）
+3. 阅读 `src/mempool`：内存池、static 作用域、内存泄漏统计
+4. 跑 `test_ai`：规则分词、编辑距离、意图匹配
+5. 跑 `test_session`：二级指针链表（上下文）
+6. 最后开启 TCP 服务模式，端到端交互
+
+
+
+## 📌 描述模板
+
+> 基于 C11 实现自定义二进制协议网关，采用状态机处理 TCP 粘包，使用函数指针表实现命令分发；自研固定块内存池减少内存碎片；利用柔性数组承载变长包体；集成规则 AI 聊天模块，实现分词、模糊匹配与多轮对话上下文；项目覆盖指针、内存对齐、预处理宏等 C 进阶难点，支持后续接入 TinyML 推理。
+
+## ✅ 清单
 - 指针体系：一级指针、二级指针、数组指针、指针数组、函数指针
 - const 多种组合：`const int *` / `int *const` / `const int *const`
 - 结构体、联合体、位域、内存对齐、padding
@@ -36,7 +77,7 @@ typedef struct MsgHeader {
     uint32_t body_len;
     uint8_t  data[];  // 柔性数组：变长包体
 } MsgHeader;
-static_assert(sizeof(MsgHeader) == 12, "header fixed size");
+static_assert(sizeof(MsgHeader) == 8, "header fixed size");
 ```
 
 命令枚举：
@@ -45,112 +86,12 @@ static_assert(sizeof(MsgHeader) == 12, "header fixed size");
 - CMD_ECHO    0x02 回显
 - CMD_AI_TEXT 0x03 AI 文本问答（规则聊天）
 
-## 📂 目录说明
+
+
 
 ```
-minimsg-c/
-├── README.md               # 项目总说明、学习清单、编译、运行、扩展路线
-├── Makefile                # 编译脚本，支持debug/release，分阶段编译
-├── src/
-│   ├── packet/    协议头定义、序列化/反序列化工具
-│   ├── parser/    状态机粘包解析 + 命令分发（函数指针回调表）
-│   ├── mempool/   自研固定块内存池，所有数据包从这里分配
-│   ├── log/       日志：可变参数宏 + _Generic泛型打印
-│   ├── ai/        规则AI：词典、最大正向分词、编辑距离模糊匹配、意图识别
-│   ├── session/   对话上下文链表，保存历史对话
-│   ├── net/       TCP服务端（select单线程Reactor，可开关）
-│   └── main.c     入口，支持两种运行模式
-├── tests/         分模块单元测试，单独编译调试单个模块
-└── docs/          学习自查清单
-```
-
-详细目录规划如下：
-```
-minimsg-c/
-├── README.md               # 项目总说明、学习清单、编译、运行、扩展路线
-├── Makefile                # 编译脚本，支持debug/release，分阶段编译
-├── .gitignore
-├── src/
-│   ├── packet/             # 协议定义层：位域、柔性数组、对齐校验
-│   │   ├── packet.h
-│   │   └── packet.c
-│   ├── parser/             # 状态机粘包解析、命令分发（函数指针回调）
-│   │   ├── parser.h
-│   │   └── parser.c
-│   ├── mempool/            # 自研固定块内存池（内存管理核心）
-│   │   ├── mempool.h
-│   │   └── mempool.c
-│   ├── log/                # 日志模块：可变参数宏、_Generic泛型打印
-│   │   ├── log.h
-│   │   └── log.c
-│   ├── ai/                 # AI模块（第一版：规则聊天、分词、模糊匹配）
-│   │   ├── ai.h
-│   │   └── ai.c
-│   ├── session/            # 对话上下文链表（二级指针操作链表）
-│   │   ├── session.h
-│   │   └── session.c
-│   ├── net/                # TCP服务端（select单线程Reactor，后置开启）
-│   │   ├── net.h
-│   │   └── net.c
-│   └── main.c              # 入口：分模式【内存测试模式 / TCP服务模式】
-├── tests/                   # 独立单元测试文件（教学重点！）
-│   ├── test_packet.c
-│   ├── test_parser.c
-│   ├── test_mempool.c
-│   └── test_ai.c
-└── docs/
-    └── learning_checklist.md  # 学习清单：每个难点对应代码位置，自查表
-```
-> 设计理由：
->
-> 1. 按**分层**而不是按功能堆文件：协议→解析→内存→日志→AI→网络
-> 2. tests 独立：每个模块单独可跑，新手可以单独跑 `test_parser` 不用碰网络
-> 3. docs 放学习清单，教学属性拉满：学习者可以对照清单，找到对应知识点位置
-
-
-## 🚀 编译 & 运行
-
-```
-# 编译全部（默认DEBUG，开启日志）
-make
-
-# 只编译 parser 单元测试（推荐新手第一步）
-make test_parser
-
-# 运行【内存测试模式】：不启动网络，直接模拟粘包buffer，最适合学习
-./minimsg --test
-
-# 运行【TCP服务模式】 nc 127.0.0.1 8888 交互聊天
-./minimsg --server
-```
-
-## 📖 学习顺序（非常重要，避免烂尾）
-
-1. 阅读 `src/packet/packet.h`：位域、柔性数组、static_assert 对齐校验
-2. 跑 `test_parser`：状态机、粘包解析、函数指针分发（核心难点）
-3. 阅读 `src/mempool`：内存池、static 作用域、内存泄漏统计
-4. 跑 `test_ai`：规则分词、编辑距离、意图匹配
-5. 跑 `test_session`：二级指针链表（上下文）
-6. 最后开启 TCP 服务模式，端到端交互
-
-## ⚠️ 项目约束（教学目的）
-
-1. 优先使用 C 原生语法，不引入重型第三方库
-2. 所有内存申请优先走内存池，禁止随意 malloc
-3. 所有对外接口参数优先加 const、restrict，展示规范写法
-4. 大量注释标注【学习点】，解释 “为什么这么写，坑是什么”
-5. 所有模块独立可测试，方便单独调试知识点
-
-## 📌 简历描述模板
-
-> 基于 C11 实现自定义二进制协议网关，采用状态机处理 TCP 粘包，使用函数指针表实现命令分发；自研固定块内存池减少内存碎片；利用柔性数组承载变长包体；集成规则 AI 聊天模块，实现分词、模糊匹配与多轮对话上下文；项目覆盖指针、内存对齐、预处理宏等 C 进阶难点，支持后续接入 TinyML 推理。
-
-```
-## 三、docs/learning_checklist.md（教学自查清单，学习者用来打卡）
+## 三、docs/learning_checklist.md
 ```markdown
-# MiniMsg-C 学习自查清单
-> 每看懂 + 调试通一个模块，打勾 ✅
-
 ## 基础语法与C99/C11特性
 - [ ] _Static_assert 编译期断言，校验结构体对齐
 - [ ] _Generic 泛型打印宏，自动识别类型
@@ -187,37 +128,6 @@ make test_parser
 - [ ] _Atomic 原子计数、_Thread_local 多线程版本
 ```
 
-## 四、注释规范（教学向，固定写法）
-
-所有代码注释统一三类标记，保证教学效果：
-
-1. `【学习点】`：这里是核心难点，解释原理、坑、面试考点
-2. `【注意UB】`：这里容易触发未定义行为，明确风险
-3. `【扩展点】`：这个位置可以后续叠加功能（比如后面接 TFLite tensor）
-
-示例片段（packet.h）：
-
-```
-/**
- * MsgHeader 自定义协议包头
- * 【学习点1】位域：用bit打包标志位，节省空间，协议/寄存器常用
- * 【学习点2】柔性数组 data[]：只能放在结构体最后，没有占结构体大小
- * 【学习点3】static_assert：编译期校验包大小，不同编译器对齐不一致直接编译报错
- * 【注意UB】柔性数组不能直接拷贝结构体，只能拷贝包体
- */
-typedef struct MsgHeader {
-    uint8_t ver :4;
-    uint8_t encrypt :1;
-    uint8_t compress :1;
-    uint8_t reserved :2;
-    uint8_t  cmd;
-    uint16_t seq;
-    uint32_t body_len;
-    uint8_t  data[];
-} MsgHeader;
-
-static_assert(sizeof(MsgHeader) == 12, "MsgHeader must be 12 bytes fixed!");
-```
 
 ## 五、Makefile（支持 debug、单元测试、分模块编译）
 
@@ -327,7 +237,7 @@ main()
 
 ```
 
-## 对你原图的几处补充 & 修正点
+## 修正点
 
 1. `mempool_init`、`cmd_dispatch_register_table` 不是在`conn_mgr_init`里面，是在上层`service_ctx_init`执行。
 2. 主循环定时扫描做两件事：**连接心跳超时 + session 会话过期清理**，你原图只写了扫描连接。
@@ -341,7 +251,7 @@ main()
 5. accept 成功之后，除了创建 tcp_conn，还会同步`session_create`创建会话。
 6. 错误分支：`tcp_conn_on_read`读到对端关闭 / 错误 → 返回 false → 上层调用`tcp_conn_destroy`销毁连接，触发 close_cb，回调执行`conn_mgr_remove_conn`把 fd 从 epoll 摘除。
 
-## 销毁链路（补充，你没画）
+## 销毁链路
 
 ```
 tcp_conn_destroy(conn)
@@ -350,37 +260,24 @@ tcp_conn_destroy(conn)
 └─ 执行 close_cb(conn, ud) → conn_close_cb → conn_mgr_remove_conn
 ```
 
-## 数据流极简一句话
+## 数据流
 
 > 
 > 客户端字节 → recv → parser 状态机拆包 → cmd 分发 handler → handler 调用 send_pkt 组装应答写入用户层 send_buf；要么当场 send 出去，要么等待 epoll EPOLLOUT 事件后续发送。
 
 
-
-## 教学要点
-
-1. **单线程 epoll + ET 边缘触发**，经典 reactor 简化版本，适合学习；
-2. 连接关闭闭环：`tcp_conn_destroy` → 触发 close 回调 → `conn_mgr_remove_conn`，自动从 epoll 和列表移除；
-3. 心跳扫描：每次 epoll 循环判断时间差，定时遍历所有连接，超时自动断开；
-4. 连接数组简单管理，上限`CONN_MGR_MAX_CONN`，教学足够；生产可以链表；
-5. accept4 直接创建非阻塞 client fd，简化代码。
-
-
-# 整体项目现状总结
+# 项目现状
 
 1. 头文件范式：**风格 2 typedef 结构体，循环依赖头文件只用`struct X;`标签前置，指针写`struct X *`；.c include 完整头文件后使用别名**，编译无 conflicting‑types /unknown‑type‑name。
 2. 模块划分：`packet`协议包头、`parser`粘包状态机、`tcp_conn`单连接封装、`conn_mgr`epoll 事件循环、`session`会话历史、`cmd_dispatch`命令分发、`mempool`内存池、`log`日志。
 3. 完整链路：客户端发包 → TCP 流式接收 → parser 状态机拆包 → cmd_dispatch 路由到业务 handler → 业务组装应答包入 send_buf → 主动 send 发送 → 客户端收到字节。
 4. 内存生命周期：`ServiceCtx` → malloc `ConnMgr` → malloc `SessionMgr`，全部配套 free；`session_mgr_init`初始化链表，不再出现 malloc 脏内存导致的段错误。
 
-### 后续可拓展方向（可选）
+### 后续可拓展方向
 
 1. 信号处理 (SIGINT)，跳出 epoll 循环，优雅释放全部资源，现在`service_ctx_run`是死循环，`service_ctx_destroy`永远执行不到。
 2. 客户端接入 parser，解析收到的二进制包，打印 cmd、seq、包体文本。
 3. 增加离线会话测试：客户端断开，短时间重连，复用旧 session 会话历史。
 4. 内存池增加更多统计，做内存泄漏测试。
 
-
-
-ET 边缘触发网络编程的经典坑：新建 socket 发送缓冲区本来就空闲，不会产生 EPOLLOUT 事件。**新压入数据，队列为空时必须主动调用一次写函数；写不完残留数据，才靠 epoll 的 EPOLLOUT 事件继续发送**。
-这个坑很多写 epoll 的新手都会踩。
+ET 边缘触发网络编程的经典坑：新建 socket 发送缓冲区本来就空闲，不会产生 EPOLLOUT 事件。**新压入数据，队列为空时必须主动调用一次写函数；写不完残留数据，才靠 epoll 的 EPOLLOUT 事件继续发送**。这个坑很多写 epoll 的新手都会踩。
