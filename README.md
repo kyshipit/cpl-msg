@@ -1,6 +1,9 @@
+## cpl-msg
 
-master‑worker多‑reactor epoll网络服务，模拟AI聊天服务。
 
+- master‑worker多‑reactor epoll网络服务，模拟AI聊天服务。
+
+- 二进制协议网关 + 规则AI聊天机器人，可渐进扩展 TinyML 推理、向量检索。
 
 ```
 ├── README.md

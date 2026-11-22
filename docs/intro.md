@@ -1,7 +1,10 @@
-# CPL-MSG
-> 基于 C11 的自定义二进制协议网关 + 规则AI聊天机器人，可渐进扩展 TinyML 推理、向量检索。
+cpl-msg：二进制协议网关 + 规则AI聊天机器人，可渐进扩展 TinyML 推理、向量检索。
 
-## 📂 目录说明
+> 基于 C11 实现自定义二进制协议网关，采用状态机处理 TCP 粘包，使用函数指针表实现命令分发；自研固定块内存池减少内存碎片；利用柔性数组承载变长包体；集成规则 AI 聊天模块，实现分词、模糊匹配与多轮对话上下文；项目覆盖指针、内存对齐、预处理宏等 C 进阶难点，支持后续接入 TinyML 推理。
+
+
+
+## 📂 目录
 
 ```
 minimsg-c/
@@ -26,25 +29,6 @@ minimsg-c/
 > 2. tests 独立：每个模块单独可跑，新手可以单独跑 `test_parser` 不用碰网络
 
 
-## 🚀 编译 & 运行
-
-
-
-## 📖 顺序
-
-1. 阅读 `src/packet/packet.h`：位域、柔性数组、static_assert 对齐校验
-2. 跑 `test_parser`：状态机、粘包解析、函数指针分发（核心难点）
-3. 阅读 `src/mempool`：内存池、static 作用域、内存泄漏统计
-4. 跑 `test_ai`：规则分词、编辑距离、意图匹配
-5. 跑 `test_session`：二级指针链表（上下文）
-6. 最后开启 TCP 服务模式，端到端交互
-
-
-
-## 📌 描述模板
-
-> 基于 C11 实现自定义二进制协议网关，采用状态机处理 TCP 粘包，使用函数指针表实现命令分发；自研固定块内存池减少内存碎片；利用柔性数组承载变长包体；集成规则 AI 聊天模块，实现分词、模糊匹配与多轮对话上下文；项目覆盖指针、内存对齐、预处理宏等 C 进阶难点，支持后续接入 TinyML 推理。
-
 ## ✅ 清单
 - 指针体系：一级指针、二级指针、数组指针、指针数组、函数指针
 - const 多种组合：`const int *` / `int *const` / `const int *const`
@@ -64,28 +48,6 @@ minimsg-c/
 > - 简易KNN向量检索、RAG知识库
 > - 多线程版本：_Atomic、_Thread_local
 > - 多连接TCP、简单心跳保活
-
-## 📦 协议简介（自定义二进制包）
-```c
-typedef struct MsgHeader {
-    uint8_t ver :4;
-    uint8_t encrypt :1;
-    uint8_t compress :1;
-    uint8_t reserved :2;
-    uint8_t  cmd;
-    uint16_t seq;
-    uint32_t body_len;
-    uint8_t  data[];  // 柔性数组：变长包体
-} MsgHeader;
-static_assert(sizeof(MsgHeader) == 8, "header fixed size");
-```
-
-命令枚举：
-
-- CMD_PING    0x01 心跳包
-- CMD_ECHO    0x02 回显
-- CMD_AI_TEXT 0x03 AI 文本问答（规则聊天）
-
 
 
 
@@ -182,7 +144,6 @@ clean:
 9. 主线全部稳定后，再做扩展：TFLite、向量检索、多线程原子
 
 
-
 ## 7、完整链路汇总
 ```
 main()
@@ -266,14 +227,14 @@ tcp_conn_destroy(conn)
 > 客户端字节 → recv → parser 状态机拆包 → cmd 分发 handler → handler 调用 send_pkt 组装应答写入用户层 send_buf；要么当场 send 出去，要么等待 epoll EPOLLOUT 事件后续发送。
 
 
-# 项目现状
+# 现状
 
 1. 头文件范式：**风格 2 typedef 结构体，循环依赖头文件只用`struct X;`标签前置，指针写`struct X *`；.c include 完整头文件后使用别名**，编译无 conflicting‑types /unknown‑type‑name。
 2. 模块划分：`packet`协议包头、`parser`粘包状态机、`tcp_conn`单连接封装、`conn_mgr`epoll 事件循环、`session`会话历史、`cmd_dispatch`命令分发、`mempool`内存池、`log`日志。
 3. 完整链路：客户端发包 → TCP 流式接收 → parser 状态机拆包 → cmd_dispatch 路由到业务 handler → 业务组装应答包入 send_buf → 主动 send 发送 → 客户端收到字节。
 4. 内存生命周期：`ServiceCtx` → malloc `ConnMgr` → malloc `SessionMgr`，全部配套 free；`session_mgr_init`初始化链表，不再出现 malloc 脏内存导致的段错误。
 
-### 后续可拓展方向
+### 拓展方向
 
 1. 信号处理 (SIGINT)，跳出 epoll 循环，优雅释放全部资源，现在`service_ctx_run`是死循环，`service_ctx_destroy`永远执行不到。
 2. 客户端接入 parser，解析收到的二进制包，打印 cmd、seq、包体文本。
