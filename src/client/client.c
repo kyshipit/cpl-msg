@@ -1,7 +1,6 @@
 /**
- * @file client.c
- * 简单同步客户端，发送PING / ECHO / AI_TEXT
- * usage: ./client 127.0.0.1 8888
+ * client
+ * 交互式客户端，支持键盘输入发送AI_TEXT消息
  */
 #include <stdio.h>
 #include <stdlib.h>
@@ -10,9 +9,50 @@
 #include <sys/socket.h>
 #include <netinet/in.h>
 #include <arpa/inet.h>
-#include "packet/packet.h"
+#include <pthread.h>
+#include "protocol/packet.h"
+#include "protocol/parser.h"
 
-int build_pkt(uint8_t *out, uint32_t cmd, uint32_t seq, const char *body)
+static int g_fd = -1;
+static uint16_t g_seq = 0;
+
+// 收到服务端数据包回调打印
+static void on_recv_pkt(struct Parser *parser, const MsgHeader *hdr, const uint8_t *body, void *ud)
+{
+    (void)parser;
+    (void)ud;
+    if(hdr->cmd == CMD_AI_TEXT)
+    {
+        printf("\n[AI回复] %.*s\n> ", (int)hdr->body_len, (const char *)body);
+        fflush(stdout);
+    }
+    else
+    {
+        printf("\n[收到包] cmd=%u seq=%u len=%u\n> ", hdr->cmd, hdr->seq, hdr->body_len);
+        fflush(stdout);
+    }
+}
+
+// 后台收包线程
+static void* recv_thread(void *arg)
+{
+    (void)arg;
+    Parser parser;
+    parser_init(&parser, NULL, on_recv_pkt, NULL);
+    uint8_t rbuf[1024];
+    ssize_t n;
+    while((n = recv(g_fd, rbuf, sizeof(rbuf), 0)) > 0)
+    {
+        parser_input(&parser, rbuf, (uint32_t)n);
+    }
+    parser_reset(&parser);
+    printf("\n连接已断开\n");
+    exit(0);
+    return NULL;
+}
+
+// 组装二进制数据包
+static int build_pkt(uint8_t *out, uint32_t cmd, uint32_t seq, const char *body)
 {
     uint32_t body_len = body ? strlen(body) : 0;
     MsgHeader *hdr = (MsgHeader *)out;
@@ -34,6 +74,7 @@ int build_pkt(uint8_t *out, uint32_t cmd, uint32_t seq, const char *body)
     return sizeof(MsgHeader) + body_len;
 }
 
+// 客户端主函数
 int main(int argc, char** argv)
 {
     if(argc != 3)
@@ -42,45 +83,41 @@ int main(int argc, char** argv)
         return -1;
     }
     const char *ip = argv[1];
-    uint16_t port = atoi(argv[2]);
-
-    int fd = socket(AF_INET, SOCK_STREAM, 0);
+    uint16_t port = (uint16_t)atoi(argv[2]);
+    g_fd = socket(AF_INET, SOCK_STREAM, 0);
     struct sockaddr_in srv = {0};
     srv.sin_family = AF_INET;
     srv.sin_port = htons(port);
     inet_pton(AF_INET, ip, &srv.sin_addr);
-    if(connect(fd, (struct sockaddr *)&srv, sizeof(srv)) < 0)
+    if(connect(g_fd, (struct sockaddr *)&srv, sizeof(srv)) < 0)
     {
         perror("connect");
+        close(g_fd);
         return -1;
     }
-    printf("connected to server\n");
+    printf("已连接到服务器，输入消息发送，Ctrl+C退出\n> ");
+    fflush(stdout);
 
-    uint8_t buf[512];
-    int len;
-    // 1. PING
-    len = build_pkt(buf, CMD_PING, 1001, NULL);
-    send(fd, buf, len, 0);
-    sleep(1);
-    // 2. ECHO
-    len = build_pkt(buf, CMD_ECHO, 1002, "hello mini msg");
-    send(fd, buf, len, 0);
-    sleep(1);
-    // 3. AI_TEXT
-    len = build_pkt(buf, CMD_AI_TEXT, 1003, "你好，介绍一下自己");
-    send(fd, buf, len, 0);
+    pthread_t tid;
+    pthread_create(&tid, NULL, recv_thread, NULL);
 
-    printf("packets sent, wait response...\n");
-    char rbuf[512];
-    ssize_t n;
-    // 循环接收5秒，或者对端关闭就退出
-    alarm(5);
-    while ((n = recv(fd, rbuf, sizeof(rbuf), 0)) > 0)
+    char line[256];
+    while(fgets(line, sizeof(line), stdin) != NULL)
     {
-        printf("client recv %zd bytes\n", n);
+        size_t len = strlen(line);
+        if(len > 0 && line[len-1] == '\n')
+            line[len-1] = '\0';
+        if(strlen(line) == 0)
+        {
+            printf("> ");
+            fflush(stdout);
+            continue;
+        }
+        uint8_t buf[512];
+        int pkt_len = build_pkt(buf, CMD_AI_TEXT, g_seq++, line);
+        send(g_fd, buf, pkt_len, 0);
     }
-    alarm(0);
 
-    close(fd);
+    close(g_fd);
     return 0;
 }

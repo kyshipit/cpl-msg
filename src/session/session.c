@@ -1,17 +1,17 @@
 /**
- * @file session.c
- * @brief session链表实现，对话历史管理
+ * session实现
+ * 单向链表维护会话，二级指针做链表节点删除
  */
-#define _GNU_SOURCE
-#include <inttypes.h>
 #include <time.h>
+#include "session/session.h"
+#include "core/log.h"
+#include "net/tcp_conn.h"
 #include <stdlib.h>
 #include <string.h>
-#include <stdio.h>
-#include "session/session.h"
-#include "log/log.h"
-#include "tcp_conn/tcp_conn.h"
+#include <inttypes.h>
+#include <assert.h>
 
+// 获取单调时钟毫秒
 static uint64_t get_ms(void)
 {
     struct timespec ts;
@@ -19,23 +19,27 @@ static uint64_t get_ms(void)
     return (uint64_t)ts.tv_sec * 1000 + (uint64_t)ts.tv_nsec / 1000000;
 }
 
-// 简单生成sid：用时间+随机数
+// 生成会话id字符串
 static void gen_sid(char *buf, uint32_t len)
 {
+    assert(buf != NULL);
     uint64_t t = get_ms();
-    //snprintf(buf, len, "sess-%llu", t);
     snprintf(buf, len, "sess-%" PRIu64, t);
 }
 
+// 初始化会话管理器
 void session_mgr_init(SessionMgr *mgr)
 {
+    assert(mgr != NULL);
     mgr->head = NULL;
     mgr->total_cnt = 0;
     LOG_INFO("session mgr init");
 }
 
+// 创建会话，绑定tcp连接
 Session *session_create(SessionMgr *mgr, struct TcpConn *conn)
 {
+    assert(mgr != NULL);
     Session *s = malloc(sizeof(Session));
     if (!s)
     {
@@ -55,8 +59,10 @@ Session *session_create(SessionMgr *mgr, struct TcpConn *conn)
     return s;
 }
 
+// 根据tcp连接查找session
 Session *session_find_by_conn(SessionMgr *mgr, struct TcpConn *conn)
 {
+    assert(mgr != NULL);
     Session *p = mgr->head;
     while (p)
     {
@@ -69,8 +75,10 @@ Session *session_find_by_conn(SessionMgr *mgr, struct TcpConn *conn)
     return NULL;
 }
 
+// 根据sid查找session
 Session *session_find_by_sid(SessionMgr *mgr, const char *sid)
 {
+    assert(mgr != NULL && sid != NULL);
     Session *p = mgr->head;
     while (p)
     {
@@ -83,12 +91,13 @@ Session *session_find_by_sid(SessionMgr *mgr, const char *sid)
     return NULL;
 }
 
+// 追加消息到会话历史，超过上限丢弃最旧消息
 void session_append_msg(Session *s, bool is_user, const char *text)
 {
-    if (!s || !text) return;
+    assert(s != NULL && text != NULL);
+    if (!s || !text)
+        return;
     s->last_active_ts = get_ms();
-
-    // 满了，整体往前挪，丢弃最早一条
     if (s->msg_cnt >= SESSION_MAX_HISTORY)
     {
         for (uint32_t i = 1; i < SESSION_MAX_HISTORY; i++)
@@ -102,20 +111,24 @@ void session_append_msg(Session *s, bool is_user, const char *text)
     strncpy(s->history[idx].content, text, SESSION_MSG_CONTENT_LEN - 1);
     s->history[idx].content[SESSION_MSG_CONTENT_LEN - 1] = '\0';
     s->msg_cnt++;
-
     LOG_DEBUG("session append msg, is_user=%d, content=%s", is_user, text);
 }
 
+// 解绑session和tcp连接
 void session_unbind_conn(Session *s)
 {
-    if (!s) return;
+    if (!s)
+        return;
     s->bind_conn = NULL;
     LOG_INFO("session %s unbind conn", s->sid);
 }
 
+// 删除指定session，二级指针遍历链表
 void session_destroy(SessionMgr *mgr, Session *s)
 {
-    if (!mgr || !s) return;
+    assert(mgr != NULL);
+    if (!mgr || !s)
+        return;
     Session **p = &mgr->head;
     while (*p)
     {
@@ -131,8 +144,10 @@ void session_destroy(SessionMgr *mgr, Session *s)
     }
 }
 
+// 扫描全部session，删除超时会话
 void session_scan_expire(SessionMgr *mgr, uint64_t now_ms, uint64_t expire_ms)
 {
+    assert(mgr != NULL);
     Session **p = &mgr->head;
     while (*p)
     {
@@ -151,8 +166,11 @@ void session_scan_expire(SessionMgr *mgr, uint64_t now_ms, uint64_t expire_ms)
     }
 }
 
+// 销毁会话管理器，释放全部session
 void session_mgr_destroy(SessionMgr *mgr)
 {
+    if (!mgr)
+        return;
     Session *p = mgr->head;
     while (p)
     {
